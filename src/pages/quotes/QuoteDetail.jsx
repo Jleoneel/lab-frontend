@@ -21,6 +21,8 @@ import EditQuoteModal from "../../components/quotes/EditQuoteModal";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import { formatDate } from "../../lib/utils";
+import { FileSignature, ShieldCheck } from 'lucide-react';
+import { acuerdoService } from '../../services/acuerdoService';
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
@@ -47,6 +49,8 @@ export default function QuoteDetail() {
   const [converting, setConverting] = useState(false);
   const [approving, setApproving] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [generandoAcuerdo, setGenerandoAcuerdo] = useState(false);
+  const [marcandoFirmado, setMarcandoFirmado] = useState(false);
 
   useEffect(() => {
     loadQuote();
@@ -230,8 +234,8 @@ export default function QuoteDetail() {
             </thead>
             <tbody>
               ${quote.items
-                ?.map(
-                  (item) => `
+        ?.map(
+          (item) => `
                 <tr>
                   <td>
                     <div>${item.serviceName}</div>
@@ -242,8 +246,8 @@ export default function QuoteDetail() {
                   <td style="text-align:right">$${item.lineSubtotal?.toLocaleString("es-CL")}</td>
                 </tr>
               `,
-                )
-                .join("")}
+        )
+        .join("")}
             </tbody>
           </table>
 
@@ -276,6 +280,49 @@ export default function QuoteDetail() {
     printWindow.focus();
     printWindow.print();
     setTimeout(() => printWindow.close(), 500);
+  };
+
+  const handleGenerarAcuerdo = async () => {
+    setGenerandoAcuerdo(true);
+    try {
+      const response = await acuerdoService.generar(quote.id);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `acuerdo-${quote.quoteNumber}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo generar el acuerdo', confirmButtonColor: '#009933' });
+    } finally {
+      setGenerandoAcuerdo(false);
+    }
+  };
+
+  const handleMarcarFirmado = async () => {
+    const result = await Swal.fire({
+      title: '¿Marcar acuerdo como firmado?',
+      text: 'Confirma que el cliente firmó físicamente el acuerdo de confidencialidad.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#009933',
+      cancelButtonColor: '#666666',
+      confirmButtonText: 'Sí, firmado',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
+
+    setMarcandoFirmado(true);
+    try {
+      await acuerdoService.marcarFirmado(quote.clientId);
+      await loadQuote();
+      Swal.fire({ icon: 'success', title: '¡Listo!', text: 'Acuerdo marcado como firmado', timer: 2000, timerProgressBar: true, showConfirmButton: false });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar', confirmButtonColor: '#009933' });
+    } finally {
+      setMarcandoFirmado(false);
+    }
   };
 
   if (loading) {
@@ -323,7 +370,7 @@ export default function QuoteDetail() {
       </div>
     );
   }
-  
+
   const vencida = quote.validUntil && new Date(quote.validUntil) < new Date();
 
   return (
@@ -370,17 +417,30 @@ export default function QuoteDetail() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {quote.status === "DRAFT" && (
+            {quote.status === 'DRAFT' && (
               <Button
                 onClick={handleApprove}
-                disabled={vencida || quote.status !== "DRAFT"}
+                disabled={vencida || !quote.acuerdoFirmado || approving}
                 variant="success"
                 className="shadow-sm"
-                style={{ backgroundColor: "#009933" }}
+                style={{ backgroundColor: quote.acuerdoFirmado ? '#009933' : '#CCCCCC' }}
               >
                 <ThumbsUp className="w-4 h-4 mr-2" />
-                {approving ? "Aprobando..." : "Aprobar Cotización"}
+                {approving ? 'Aprobando...' : 'Aprobar Cotización'}
               </Button>
+            )}
+
+            {/* Aviso si no tiene acuerdo firmado */}
+            {quote.status === 'DRAFT' && !quote.acuerdoFirmado && !vencida && (
+              <div
+                className="rounded-xl p-3 flex items-center gap-2"
+                style={{ backgroundColor: '#FFF9E8', border: '1px solid #FFCC3380' }}
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#FFCC33' }} />
+                <p className="text-sm" style={{ color: '#996600' }}>
+                  Se requiere acuerdo de confidencialidad firmado para aprobar.
+                </p>
+              </div>
             )}
 
             {quote.status === "DRAFT" && (
@@ -404,6 +464,47 @@ export default function QuoteDetail() {
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Convertir a Solicitud
               </Button>
+            )}
+
+            {/* Botón generar acuerdo — siempre visible en DRAFT */}
+            {quote.status === 'DRAFT' && (
+              <Button
+                onClick={handleGenerarAcuerdo}
+                disabled={generandoAcuerdo}
+                variant="secondary"
+                className="shadow-sm"
+                style={{ borderColor: '#009933', color: '#009933' }}
+              >
+                <FileSignature className="w-4 h-4 mr-2" />
+                {generandoAcuerdo ? 'Generando...' : 'Generar Acuerdo'}
+              </Button>
+            )}
+
+            {/* Botón marcar firmado — solo si no está firmado */}
+            {quote.status === 'DRAFT' && !quote.acuerdoFirmado && (
+              <Button
+                onClick={handleMarcarFirmado}
+                disabled={marcandoFirmado}
+                variant="secondary"
+                className="shadow-sm"
+                style={{ borderColor: '#FFCC33', color: '#996600' }}
+              >
+                <ShieldCheck className="w-4 h-4 mr-2" />
+                {marcandoFirmado ? 'Guardando...' : 'Marcar como Firmado'}
+              </Button>
+            )}
+
+            {/* Badge si ya está firmado */}
+            {quote.acuerdoFirmado && (
+              <div
+                className="rounded-xl px-4 py-2 flex items-center gap-2"
+                style={{ backgroundColor: '#E8F5E9', border: '1px solid #009933' }}
+              >
+                <ShieldCheck className="w-4 h-4" style={{ color: '#009933' }} />
+                <span className="text-sm font-medium" style={{ color: '#009933' }}>
+                  Acuerdo firmado
+                </span>
+              </div>
             )}
 
             <Button

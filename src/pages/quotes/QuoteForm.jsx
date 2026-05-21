@@ -21,6 +21,11 @@ import {
   Scale,
 } from "lucide-react";
 
+const toUTC = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr + 'T12:00:00').toISOString();
+};
+
 // Componente Select personalizado con búsqueda
 const Select = ({
   label,
@@ -366,14 +371,11 @@ export default function QuoteForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const validUntilISO = formData.validUntil
-      ? new Date(formData.validUntil).toISOString()
-      : null;
     onSubmit({
       clientId: formData.clientId,
       priceList: formData.priceList,
       ivaPercent: formData.ivaPercent,
-      validUntil: validUntilISO,
+      validUntil: toUTC(formData.validUntil),
       items: formData.items.map(({ serviceId, quantity }) => ({
         serviceId,
         quantity,

@@ -27,6 +27,11 @@ const toDateInput = (date) => {
   return new Date(date).toISOString().split('T')[0];
 };
 
+const toUTC = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr + 'T12:00:00').toISOString();
+};
+
 export default function EditEquipoModal({ isOpen, onClose, equipo, onSaved }) {
   const [formData, setFormData] = useState({
     nombre: '', modelo: '', marca: '', serie: '',
@@ -116,7 +121,15 @@ export default function EditEquipoModal({ isOpen, onClose, equipo, onSaved }) {
     setSaving(true);
     try {
       const fotoNueva = fotos.find(f => !f.isExisting)?.file || null;
-      await equipoService.update(equipo.id, formData, fotoNueva);
+      
+      const dataToSubmit = {
+        ...formData,
+        fechaAdquisicion: toUTC(formData.fechaAdquisicion),
+        fechaMantenimiento: toUTC(formData.fechaMantenimiento),
+        fechaCalibracion: toUTC(formData.fechaCalibracion),
+      };
+
+      await equipoService.update(equipo.id, dataToSubmit, fotoNueva);
 
       await Swal.fire({
         icon: 'success',

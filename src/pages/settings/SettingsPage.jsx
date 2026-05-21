@@ -8,6 +8,9 @@ import {
   Pencil,
   Trash2,
   X,
+  FileSignature,
+  Upload,
+  AlertCircle
 } from "lucide-react";
 import { settingsService } from "../../services/settingsService";
 import Swal from "sweetalert2";
@@ -33,19 +36,22 @@ export default function SettingsPage() {
   const [editNombreCategoria, setEditNombreCategoria] = useState("");
   const [savingCategoria, setSavingCategoria] = useState(false);
 
+  // Template Acuerdo
+  const [subiendoTemplate, setSubiendoTemplate] = useState(false);
+
   const loadSettings = useCallback(async () => {
     try {
       const [ivaData, razonesData, categoriasData] = await Promise.all([
         settingsService.getIva(),
         settingsService.getRazones(),
-        categoriaReactivoService.getAll(), // 👈
+        categoriaReactivoService.getAll(),
       ]);
       setIva(String(ivaData.iva));
       setCurrentIva(ivaData.iva);
       setRazones(Array.isArray(razonesData) ? razonesData : []);
       setCategorias(
         Array.isArray(categoriasData.data) ? categoriasData.data : [],
-      ); // 👈
+      );
     } catch {
       //
     } finally {
@@ -215,6 +221,44 @@ export default function SettingsPage() {
         text: error.response?.data?.message || "No se pudo eliminar",
         confirmButtonColor: "#dc3545",
       });
+    }
+  };
+
+  const handleSubirTemplate = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.pdf')) {
+      Swal.fire({ icon: 'error', title: 'Solo PDF', confirmButtonColor: '#009933' });
+      return;
+    }
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: '¿Reemplazar template?',
+      text: 'El template actual será reemplazado por el nuevo archivo.',
+      showCancelButton: true,
+      confirmButtonColor: '#009933',
+      cancelButtonColor: '#666666',
+      confirmButtonText: 'Sí, reemplazar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
+
+    setSubiendoTemplate(true);
+    try {
+      await settingsService.subirTemplateAcuerdo(file);
+      await Swal.fire({
+        icon: 'success',
+        title: '¡Template actualizado!',
+        text: 'El nuevo acuerdo se usará en las próximas generaciones.',
+        confirmButtonColor: '#009933',
+        timer: 2500,
+        timerProgressBar: true,
+      });
+    } catch {
+      Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo subir el template', confirmButtonColor: '#dc3545' });
+    } finally {
+      setSubiendoTemplate(false);
+      e.target.value = '';
     }
   };
 
@@ -527,90 +571,137 @@ export default function SettingsPage() {
         )}
       </div>
       {/* Tarjeta Categorías de Reactivos */}
-<div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: '#E5E5E5' }}>
-  <div className="flex items-center gap-2 mb-6">
-    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8F5E9' }}>
-      <Settings className="w-4 h-4" style={{ color: '#009933' }} />
-    </div>
-    <div>
-      <h2 className="text-base font-semibold" style={{ color: '#333333' }}>Categorías de Reactivos</h2>
-      <p className="text-xs" style={{ color: '#666666' }}>Gestiona las categorías disponibles para clasificar reactivos</p>
-    </div>
-  </div>
-
-  <div className="flex gap-3 mb-4">
-    <input
-      value={nuevaCategoria}
-      onChange={(e) => setNuevaCategoria(e.target.value)}
-      onKeyDown={(e) => e.key === 'Enter' && handleAddCategoria()}
-      style={{ ...inputStyle, flex: 1 }}
-      placeholder="Nueva categoría... (ej: Microbiología)"
-      onFocus={(e) => { e.currentTarget.style.borderColor = '#009933'; e.currentTarget.style.boxShadow = '0 0 0 2px #00993320'; }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E5E5'; e.currentTarget.style.boxShadow = 'none'; }}
-    />
-    <button onClick={handleAddCategoria} disabled={savingCategoria || !nuevaCategoria.trim()}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white disabled:opacity-50"
-      style={{ backgroundColor: '#009933' }}
-      onMouseEnter={(e) => { if (!savingCategoria) e.currentTarget.style.backgroundColor = '#00802b'; }}
-      onMouseLeave={(e) => { if (!savingCategoria) e.currentTarget.style.backgroundColor = '#009933'; }}>
-      <Plus className="w-4 h-4" />
-      Agregar
-    </button>
-  </div>
-
-  {categorias.length === 0 ? (
-    <div className="text-center py-8 rounded-xl" style={{ backgroundColor: '#F9F9F9' }}>
-      <p className="text-sm" style={{ color: '#999999' }}>No hay categorías registradas</p>
-    </div>
-  ) : (
-    <div className="space-y-2">
-      {categorias.map((cat) => (
-        <div key={cat.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
-          style={{ backgroundColor: '#F9F9F9', borderColor: '#E5E5E5' }}>
-          {editingCategoria === cat.id ? (
-            <div className="flex items-center gap-2 flex-1">
-              <input
-                value={editNombreCategoria}
-                onChange={(e) => setEditNombreCategoria(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleUpdateCategoria(cat.id)}
-                style={{ ...inputStyle, flex: 1 }}
-                autoFocus
-                onFocus={(e) => { e.currentTarget.style.borderColor = '#009933'; e.currentTarget.style.boxShadow = '0 0 0 2px #00993320'; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E5E5'; e.currentTarget.style.boxShadow = 'none'; }}
-              />
-              <button onClick={() => handleUpdateCategoria(cat.id)}
-                className="p-2 rounded-lg" style={{ color: '#009933' }}>
-                <Save className="w-4 h-4" />
-              </button>
-              <button onClick={() => { setEditingCategoria(null); setEditNombreCategoria(''); }}
-                className="p-2 rounded-lg" style={{ color: '#666666' }}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <span className="text-sm font-medium" style={{ color: '#333333' }}>{cat.nombre}</span>
-              <div className="flex gap-1">
-                <button onClick={() => { setEditingCategoria(cat.id); setEditNombreCategoria(cat.nombre); }}
-                  className="p-2 rounded-lg transition-colors" style={{ color: '#666666' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#E8F5E9'; e.currentTarget.style.color = '#009933'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#666666'; }}>
-                  <Pencil className="w-3 h-3" />
-                </button>
-                <button onClick={() => handleDeleteCategoria(cat)}
-                  className="p-2 rounded-lg transition-colors" style={{ color: '#666666' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEF2F2'; e.currentTarget.style.color = '#DC2626'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#666666'; }}>
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            </>
-          )}
+      <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: '#E5E5E5' }}>
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8F5E9' }}>
+            <Settings className="w-4 h-4" style={{ color: '#009933' }} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: '#333333' }}>Categorías de Reactivos</h2>
+            <p className="text-xs" style={{ color: '#666666' }}>Gestiona las categorías disponibles para clasificar reactivos</p>
+          </div>
         </div>
-      ))}
+
+        <div className="flex gap-3 mb-4">
+          <input
+            value={nuevaCategoria}
+            onChange={(e) => setNuevaCategoria(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddCategoria()}
+            style={{ ...inputStyle, flex: 1 }}
+            placeholder="Nueva categoría... (ej: Microbiología)"
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#009933'; e.currentTarget.style.boxShadow = '0 0 0 2px #00993320'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E5E5'; e.currentTarget.style.boxShadow = 'none'; }}
+          />
+          <button onClick={handleAddCategoria} disabled={savingCategoria || !nuevaCategoria.trim()}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+            style={{ backgroundColor: '#009933' }}
+            onMouseEnter={(e) => { if (!savingCategoria) e.currentTarget.style.backgroundColor = '#00802b'; }}
+            onMouseLeave={(e) => { if (!savingCategoria) e.currentTarget.style.backgroundColor = '#009933'; }}>
+            <Plus className="w-4 h-4" />
+            Agregar
+          </button>
+        </div>
+
+        {categorias.length === 0 ? (
+          <div className="text-center py-8 rounded-xl" style={{ backgroundColor: '#F9F9F9' }}>
+            <p className="text-sm" style={{ color: '#999999' }}>No hay categorías registradas</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {categorias.map((cat) => (
+              <div key={cat.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                style={{ backgroundColor: '#F9F9F9', borderColor: '#E5E5E5' }}>
+                {editingCategoria === cat.id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      value={editNombreCategoria}
+                      onChange={(e) => setEditNombreCategoria(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateCategoria(cat.id)}
+                      style={{ ...inputStyle, flex: 1 }}
+                      autoFocus
+                      onFocus={(e) => { e.currentTarget.style.borderColor = '#009933'; e.currentTarget.style.boxShadow = '0 0 0 2px #00993320'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#E5E5E5'; e.currentTarget.style.boxShadow = 'none'; }}
+                    />
+                    <button onClick={() => handleUpdateCategoria(cat.id)}
+                      className="p-2 rounded-lg" style={{ color: '#009933' }}>
+                      <Save className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => { setEditingCategoria(null); setEditNombreCategoria(''); }}
+                      className="p-2 rounded-lg" style={{ color: '#666666' }}>
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-sm font-medium" style={{ color: '#333333' }}>{cat.nombre}</span>
+                    <div className="flex gap-1">
+                      <button onClick={() => { setEditingCategoria(cat.id); setEditNombreCategoria(cat.nombre); }}
+                        className="p-2 rounded-lg transition-colors" style={{ color: '#666666' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#E8F5E9'; e.currentTarget.style.color = '#009933'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#666666'; }}>
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => handleDeleteCategoria(cat)}
+                        className="p-2 rounded-lg transition-colors" style={{ color: '#666666' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#FEF2F2'; e.currentTarget.style.color = '#DC2626'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#666666'; }}>
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+      {/* Tarjeta Template Acuerdo de Confidencialidad */}
+      <div className="bg-white rounded-2xl border p-6 shadow-sm" style={{ borderColor: '#E5E5E5' }}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8F5E9' }}>
+            <FileSignature className="w-4 h-4" style={{ color: '#009933' }} />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold" style={{ color: '#333333' }}>
+              Template Acuerdo de Confidencialidad
+            </h2>
+            <p className="text-xs" style={{ color: '#666666' }}>
+              Sube el PDF actualizado cuando el gobierno emita una nueva versión
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="rounded-xl p-4 mb-4 flex items-start gap-2"
+          style={{ backgroundColor: '#FFF9E8', border: '1px solid #FFCC3330' }}
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#FFCC33' }} />
+          <p className="text-xs" style={{ color: '#996600' }}>
+            El PDF debe tener los campos vacíos donde irán los datos. Al subirlo reemplaza el template anterior permanentemente.
+          </p>
+        </div>
+
+        <label
+          className="flex items-center justify-center gap-3 w-full py-3 rounded-xl border-2 border-dashed cursor-pointer transition-all"
+          style={{ borderColor: subiendoTemplate ? '#009933' : '#E5E5E5' }}
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = '#009933'}
+          onMouseLeave={(e) => { if (!subiendoTemplate) e.currentTarget.style.borderColor = '#E5E5E5'; }}
+        >
+          <Upload className="w-5 h-5" style={{ color: '#009933' }} />
+          <span className="text-sm font-medium" style={{ color: '#009933' }}>
+            {subiendoTemplate ? 'Subiendo...' : 'Seleccionar nuevo template PDF'}
+          </span>
+          <input
+            type="file"
+            accept=".pdf"
+            className="hidden"
+            onChange={handleSubirTemplate}
+            disabled={subiendoTemplate}
+          />
+        </label>
+      </div>
     </div>
-  )}
-</div>
-    </div>
+
   );
 }

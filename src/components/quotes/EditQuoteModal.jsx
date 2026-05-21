@@ -12,6 +12,11 @@ import { quoteService } from "../../services/quoteService";
 import Swal from "sweetalert2";
 import { settingsService } from "../../services/settingsService";
 
+const toUTC = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr + 'T12:00:00').toISOString();
+};
+
 // Select con búsqueda
 const SearchableSelect = ({
   label,
@@ -356,9 +361,7 @@ export default function EditQuoteModal({ isOpen, onClose, quote, onSaved }) {
         clientId: formData.clientId,
         priceList: formData.priceList,
         ivaPercent: formData.ivaPercent,
-        validUntil: formData.validUntil
-          ? new Date(formData.validUntil).toISOString()
-          : null,
+        validUntil: toUTC(formData.validUntil),
         items: formData.items.map((i) => ({
           serviceId: i.serviceId,
           quantity: i.quantity,

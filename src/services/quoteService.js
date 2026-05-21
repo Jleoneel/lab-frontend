@@ -6,6 +6,8 @@ const adaptQuoteFromBackend = (backendQuote) => {
     quoteNumber: backendQuote.quoteNumber,
     clientId: backendQuote.clientId,
     client: backendQuote.client?.name || 'Cliente',
+    acuerdoFirmado: backendQuote.client?.acuerdoFirmado ?? false, // 👈
+    fechaAcuerdo: backendQuote.client?.fechaAcuerdo ?? null,       // 👈
     priceList: backendQuote.priceList,
     ivaPercent: parseFloat(backendQuote.ivaPercent),
     subtotal: parseFloat(backendQuote.subtotal),

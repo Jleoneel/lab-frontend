@@ -20,6 +20,11 @@ import Modal from '../ui/Modal';
 import { equipoService, ESTADOS_EQUIPO } from '../../services/equipoService';
 import Swal from 'sweetalert2';
 
+const toUTC = (dateStr) => {
+  if (!dateStr) return null;
+  return new Date(dateStr + 'T12:00:00').toISOString();
+};
+
 export default function NuevoEquipoModal({ isOpen, onClose, onSaved }) {
   const [formData, setFormData] = useState({
     nombre: '', modelo: '', marca: '', serie: '',
@@ -69,7 +74,13 @@ export default function NuevoEquipoModal({ isOpen, onClose, onSaved }) {
 
     setSaving(true);
     try {
-      await equipoService.create(formData, foto);
+      const dataToSubmit = {
+        ...formData,
+        fechaAdquisicion: toUTC(formData.fechaAdquisicion),
+        fechaMantenimiento: toUTC(formData.fechaMantenimiento),
+        fechaCalibracion: toUTC(formData.fechaCalibracion),
+      };
+      await equipoService.create(dataToSubmit, foto);
       await Swal.fire({
         icon: 'success',
         title: '¡Equipo registrado!',

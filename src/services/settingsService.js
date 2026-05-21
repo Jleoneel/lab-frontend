@@ -35,4 +35,13 @@ export const settingsService = {
     const response = await api.delete(`/razones/${id}`);
     return response.data || response;
   },
+
+  subirTemplateAcuerdo: async (file) => {
+    const form = new FormData();
+    form.append('template', file);
+    const response = await api.post('/acuerdos/template', form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data || response;
+  },
 };
