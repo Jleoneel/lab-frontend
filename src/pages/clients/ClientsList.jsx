@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus, Users, Edit, Trash2, Mail, Phone,
-  Search, MapPin, Building2, FileText, ClipboardList,
+  Search, User, Building2, FileText, ClipboardList,
 } from 'lucide-react';
 import { clientService } from '../../services/clientService';
 import Button from '../../components/ui/Button';
@@ -53,7 +53,7 @@ export default function ClientsList() {
   };
 
   const openDelete = (client) => { setClientToDelete(client); setShowDeleteModal(true); };
-  const openEdit   = (client) => { setClientToEdit(client);   setShowEditModal(true);   };
+  const openEdit = (client) => { setClientToEdit(client); setShowEditModal(true); };
 
   const filteredClients = clients
     .filter(
@@ -82,10 +82,10 @@ export default function ClientsList() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users}         label="Total clientes" value={clients.length}                               variant="green" />
-        <StatCard icon={Mail}          label="Con email"      value={clients.filter(c => c.email).length}          variant="green" />
-        <StatCard icon={FileText}      label="Cotizaciones"   value={clients.reduce((a, c) => a + (c._count?.quotes || 0), 0)}    variant="green" />
-        <StatCard icon={ClipboardList} label="Solicitudes"    value={clients.reduce((a, c) => a + (c._count?.requests || 0), 0)}  variant="gold"  />
+        <StatCard icon={Users} label="Total clientes" value={clients.length} variant="green" />
+        <StatCard icon={Mail} label="Con email" value={clients.filter(c => c.email).length} variant="green" />
+        <StatCard icon={FileText} label="Cotizaciones" value={clients.reduce((a, c) => a + (c._count?.quotes || 0), 0)} variant="green" />
+        <StatCard icon={ClipboardList} label="Solicitudes" value={clients.reduce((a, c) => a + (c._count?.requests || 0), 0)} variant="gold" />
       </div>
 
       {/* Filtros */}
@@ -201,15 +201,15 @@ function ClientCard({ client, onEdit, onDelete }) {
           <div>
             <h3 className="text-lg font-semibold" style={{ color: '#009933' }}>{client.name}</h3>
             <div className="flex items-center gap-1 mt-1">
-              <MapPin className="w-3 h-3" style={{ color: '#666666' }} />
+              <User className="w-3 h-3" style={{ color: '#666666' }} />
               <p className="text-xs" style={{ color: '#666666' }}>
-                {client.city ?? 'Ciudad no especificada'}
+                {client.cedula ?? 'Cédula no registrada'}
               </p>
             </div>
           </div>
           <div className="flex gap-1">
-            <IconButton icon={Edit}   onClick={onEdit}   title="Editar"    variant="green" />
-            <IconButton icon={Trash2} onClick={onDelete} title="Eliminar"  variant="red"   />
+            <IconButton icon={Edit} onClick={onEdit} title="Editar" variant="green" />
+            <IconButton icon={Trash2} onClick={onDelete} title="Eliminar" variant="red" />
           </div>
         </div>
 
@@ -233,7 +233,7 @@ function ClientCard({ client, onEdit, onDelete }) {
           {client.address && (
             <div className="flex items-center gap-2 text-sm rounded-lg p-2" style={{ backgroundColor: '#F9F9F9' }}>
               <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: '#666666' }} />
-              <span className="truncate" style={{ color: '#666666' }}>{client.address}</span>
+              <span className="truncate" style={{ color: '#666666' }}>{client.city}</span>
             </div>
           )}
         </div>

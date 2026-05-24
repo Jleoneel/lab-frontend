@@ -1,11 +1,11 @@
 // components/clients/EditClientModal.jsx
 import { useState, useEffect } from 'react';
-import { 
-  Save, 
-  User, 
-  MapPin, 
-  Building2, 
-  Phone, 
+import {
+  Save,
+  User,
+  MapPin,
+  Building2,
+  Phone,
   Mail,
   AlertCircle,
   CheckCircle,
@@ -28,6 +28,7 @@ export default function EditClientModal({ isOpen, onClose, client, onSaved }) {
     if (isOpen && client) {
       setFormData({
         name: client.name || '',
+        cedula: client.cedula || '',
         address: client.address || '',
         city: client.city || '',
         phone: client.phone || '',
@@ -75,15 +76,15 @@ export default function EditClientModal({ isOpen, onClose, client, onSaved }) {
   };
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
       title="Editar Cliente"
       size="md"
     >
       {/* Notificación de éxito */}
       {showSuccess && (
-        <div className="absolute top-0 left-0 right-0 border-b px-4 py-3 flex items-center gap-2 animate-in slide-in-from-top z-10" 
+        <div className="absolute top-0 left-0 right-0 border-b px-4 py-3 flex items-center gap-2 animate-in slide-in-from-top z-10"
           style={{ backgroundColor: '#E8F5E9', borderColor: '#009933' }}>
           <CheckCircle className="w-5 h-5" style={{ color: '#009933' }} />
           <span className="text-sm font-medium" style={{ color: '#009933' }}>Cliente actualizado correctamente</span>
@@ -128,6 +129,15 @@ export default function EditClientModal({ isOpen, onClose, client, onSaved }) {
             icon={User}
             placeholder="Ej: Juan Pérez"
             required
+          />
+
+          <Input
+            label="Cédula / RUC"
+            name="cedula"
+            value={formData.cedula}
+            onChange={handleChange}
+            icon={User}
+            placeholder="Ej: 1234567890"
           />
 
           {/* Grid para Ciudad y Teléfono */}

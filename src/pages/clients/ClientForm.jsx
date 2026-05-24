@@ -1,13 +1,13 @@
 // pages/clients/ClientForm.jsx
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Save, 
-  User, 
-  MapPin, 
-  Building2, 
-  Phone, 
+import {
+  ArrowLeft,
+  Save,
+  User,
+  MapPin,
+  Building2,
+  Phone,
   Mail,
   AlertCircle,
   CheckCircle,
@@ -26,12 +26,13 @@ export default function ClientForm() {
 
   const [formData, setFormData] = useState({
     name: '',
+    cedula: '',
     address: '',
     city: '',
     phone: '',
     email: ''
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -60,7 +61,7 @@ export default function ClientForm() {
       ...prev,
       [name]: value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -71,21 +72,21 @@ export default function ClientForm() {
 
   const validate = () => {
     const newErrors = {};
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es obligatorio';
     }
-    
+
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email inválido';
     }
-    
+
     return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -93,7 +94,7 @@ export default function ClientForm() {
     }
 
     setLoading(true);
-    
+
     try {
       if (isEditing) {
         await clientService.update(id, formData);
@@ -117,7 +118,7 @@ export default function ClientForm() {
           timerProgressBar: true
         });
       }
-      
+
       navigate('/clients');
     } catch (error) {
       await Swal.fire({
@@ -166,8 +167,8 @@ export default function ClientForm() {
               {isEditing ? 'Editar Cliente' : 'Nuevo Cliente'}
             </h1>
             <p className="text-sm mt-1" style={{ color: '#666666', fontFamily: "'Montserrat', sans-serif" }}>
-              {isEditing 
-                ? 'Modifica los datos del cliente' 
+              {isEditing
+                ? 'Modifica los datos del cliente'
                 : 'Registra un nuevo cliente en el sistema'}
             </p>
           </div>
@@ -200,6 +201,19 @@ export default function ClientForm() {
               required
               icon={User}
               placeholder="Ej: Juan Pérez"
+            />
+          </div>
+
+          {/* Cédula */}
+          <div className="md:col-span-2">
+            <Input
+              label="Cédula / RUC"
+              name="cedula"
+              value={formData.cedula}
+              onChange={handleChange}
+              error={errors.cedula}
+              icon={User}
+              placeholder="Ej: 1234567890"
             />
           </div>
 
@@ -255,7 +269,7 @@ export default function ClientForm() {
           <div className="text-sm">
             <p className="font-medium" style={{ color: '#009933' }}>Completa los datos del cliente</p>
             <p className="text-xs mt-1" style={{ color: '#666666' }}>
-              {isEditing 
+              {isEditing
                 ? 'Los campos marcados con * son obligatorios. Puedes modificar cualquier información.'
                 : 'Todos los campos marcados con * son obligatorios. El email debe ser válido.'}
             </p>

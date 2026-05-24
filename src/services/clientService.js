@@ -5,6 +5,7 @@ const adaptClientFromBackend = (backendClient) => {
   return {
     id: backendClient.id,
     name: backendClient.name,
+    cedula: backendClient.cedula || "",
     address: backendClient.address || "",
     city: backendClient.city || "",
     phone: backendClient.phone || "",
@@ -37,6 +38,7 @@ export const clientService = {
   create: async (data) => {
     const cleanData = {
       name: data.name,
+      cedula: data.cedula || undefined,
       address: data.address || undefined,
       city: data.city || undefined,
       phone: data.phone || undefined,
@@ -49,6 +51,7 @@ export const clientService = {
   update: async (id, data) => {
     const cleanData = {
       name: data.name,
+      cedula: data.cedula || undefined,
       address: data.address || undefined,
       city: data.city || undefined,
       phone: data.phone || undefined,
