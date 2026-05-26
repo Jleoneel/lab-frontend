@@ -14,20 +14,19 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Overlay con transición */}
-      <div 
+      <div
         className="fixed inset-0 transition-opacity"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-        onClick={onClose}
       />
-      
+
       <div className="flex min-h-full items-center justify-center p-4">
-        <div 
+        <div
           className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizes[size]} overflow-hidden animate-in fade-in zoom-in duration-200`}
           style={{ borderColor: '#E5E5E5' }}
         >
           {/* Header con borde y color institucional */}
           <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: '#E5E5E5' }}>
-            <h3 
+            <h3
               className="text-lg font-semibold"
               style={{ color: '#009933', fontFamily: "'Trajan Pro Bold', serif" }}
             >
@@ -43,7 +42,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
               <X className="w-5 h-5" />
             </button>
           </div>
-          
+
           <div className="p-6">
             {children}
           </div>

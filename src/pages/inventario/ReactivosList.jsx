@@ -38,26 +38,39 @@ export default function ReactivosList() {
   const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
-    loadReactivos();
-    categoriaReactivoService.getAll().then((res) => {
-      setCategorias(Array.isArray(res.data) ? res.data : []);
-    });
+    const loadAll = async () => {
+      try {
+        const [reactivosRes, categoriasRes] = await Promise.all([
+          reactivoService.getAll(),
+          categoriaReactivoService.getAll()
+        ]);
+        setReactivos(reactivosRes.data);
+        setCategorias(Array.isArray(categoriasRes.data) ? categoriasRes.data : []);
+      } catch {
+        // silently handled
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAll();
   }, []);
 
   const loadReactivos = async () => {
     try {
-      const response = await reactivoService.getAll();
-      setReactivos(response.data);
+      const [reactivosRes, categoriasRes] = await Promise.all([
+        reactivoService.getAll(),
+        categoriaReactivoService.getAll()
+      ]);
+      setReactivos(reactivosRes.data);
+      setCategorias(Array.isArray(categoriasRes.data) ? categoriasRes.data : []);
     } catch {
       // silently handled
-    } finally {
-      setLoading(false);
     }
   };
 
   // Helper para obtener nombre de categoría por id:
   const getNombreCategoria = (categoriaId) => {
-    const cat = categorias.find((c) => c.id === categoriaId);
+    const cat = categorias.find((c) => c.id === Number(categoriaId));
     return cat?.nombre || categoriaId || "-";
   };
 
@@ -83,7 +96,7 @@ export default function ReactivosList() {
   );
   const stockPromedio = Math.round(
     reactivos.reduce((acc, r) => acc + r.stockActual, 0) /
-      (reactivos.length || 1),
+    (reactivos.length || 1),
   );
   const totalMovimientos = reactivos.reduce(
     (acc, r) => acc + (r._count?.movimientos || 0),
@@ -368,7 +381,7 @@ export default function ReactivosList() {
                             color: "#009933",
                           }}
                         >
-                          {getNombreCategoria(reactivo.categoriaId)}
+                          {getNombreCategoria(reactivo.categoria?.nombre)}
                         </span>
                       </td>
                       <td
@@ -468,7 +481,7 @@ export default function ReactivosList() {
                         className="text-xs px-2 py-0.5 rounded-full inline-block mt-1"
                         style={{ backgroundColor: "#E8F5E9", color: "#009933" }}
                       >
-                        {getNombreCategoria(reactivo.categoriaId)}
+                        {getNombreCategoria(reactivo.categoria?.nombre)}
                       </span>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-2 text-center">
